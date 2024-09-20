@@ -12,7 +12,7 @@ var app = express();
 
 app.use(logger('dev'));
 app.use(cors({
-    origin: 'http://localhost:3000', // Replace with your frontend domain
+    origin: '*', // Replace with your frontend domain
     methods: ['GET', 'POST'],
     credentials: true, // Enable this if your request requires cookies or authentication
   }));
