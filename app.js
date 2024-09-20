@@ -26,6 +26,7 @@ app.post('/api/preauth', (req, res) => {
     exec(`sudo ndsctl auth ${clientmac}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Preauth error: ${error}`);
+            console.log(error)
             return res.status(500).json({ message: 'Preauthorization failed.' });
         }
         console.log(`Preauthorized client: ${clientmac}`);
