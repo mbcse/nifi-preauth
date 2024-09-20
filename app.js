@@ -11,7 +11,11 @@ var cors = require('cors')
 var app = express();
 
 app.use(logger('dev'));
-app.use(cors)
+app.use(cors({
+    origin: 'http://localhost:3000', // Replace with your frontend domain
+    methods: ['GET', 'POST'],
+    credentials: true, // Enable this if your request requires cookies or authentication
+  }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -42,6 +46,7 @@ app.post('/api/preauth', (req, res) => {
  * Unauthorize a client after authentication
  */
 app.post('/api/unauth', (req, res) => {
+    console.log(req)
     const { clientmac } = req.body;
 
     if (!clientmac) {
