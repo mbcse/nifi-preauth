@@ -30,13 +30,13 @@ app.post('/api/preauth', (req, res) => {
     }
 
     // Preauthorize using the MAC address
-    exec(`sudo ndsctl auth ${clientmac}`, (error, stdout, stderr) => {
+    exec(`sudo ndsctl auth ${clientip}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Preauth error: ${error}`);
             console.log(error)
             return res.status(500).json({ message: 'Preauthorization failed.' });
         }
-        console.log(`Preauthorized client: ${clientmac}`);
+        console.log(`Preauthorized client: ${clientip}`);
         res.status(200).json({ message: 'Preauthorization successful.' });
     });
 });
@@ -47,14 +47,14 @@ app.post('/api/preauth', (req, res) => {
  */
 app.post('/api/unauth', (req, res) => {
     console.log(req)
-    const { clientmac } = req.body;
+    const { clientip } = req.body;
 
-    if (!clientmac) {
-        return res.status(400).json({ message: 'Client MAC address is required.' });
+    if (!clientip) {
+        return res.status(400).json({ message: 'Client Ip address is required.' });
     }
 
     // Unauthorize the client using the MAC address
-    exec(`sudo ndsctl unauth ${clientmac}`, (error, stdout, stderr) => {
+    exec(`sudo ndsctl unauth ${clientip}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Unauth error: ${error}`);
             return res.status(500).json({ message: 'Unauthorization failed.' });
