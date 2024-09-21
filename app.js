@@ -1,163 +1,109 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const { exec } = require('child_process');
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var cors = require('cors')
+const cors = require('cors');
 
-
-var app = express();
+const app = express();
 
 app.use(logger('dev'));
 
-const timeoutWindow = 180000
+const timeoutWindow = 180000;
+let timeoutIds = {};
 
 app.use(cors({
-    origin: '*', // Replace with your frontend domain
+    origin: '*',
     methods: ['GET', 'POST'],
-    credentials: true, // Enable this if your request requires cookies or authentication
-  }));
+    credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-
-let timeoutIds = {
-}
-
-setInterval(() => {
-    console.log('Timeouts:', timeoutIds);
-},5000)
-
-app.post('/api/preauth', (req, res) => {
+app.post('/api/preauth', async (req, res) => {
     const { clientmac, clientip } = req.body;
 
     if (!clientmac && !clientip) {
         return res.status(400).json({ message: 'Client MAC or IP address is required.' });
     }
 
-    // Preauthorize using the MAC address
-
-    const success = authorize(clientip)
-    if(success){
+    const success = await authorize(clientip);
+    if (success) {
         res.status(200).json({ message: 'Preauthorization successful.' });
-    }else{
+    } else {
         res.status(500).json({ message: 'Preauthorization failed.' });
-    }   
-
-
+    }
 });
 
-/**
- * API for Unauthorization
- * Unauthorize a client after authentication
- */
-app.post('/api/unauth', (req, res) => {
-    console.log(req)
+app.post('/api/unauth', async (req, res) => {
     const { clientip } = req.body;
 
     if (!clientip) {
-        return res.status(400).json({ message: 'Client Ip address is required.' });
+        return res.status(400).json({ message: 'Client IP address is required.' });
     }
 
-    const success = deauthroize(clientip)
-
-    if(success){
+    const success = await deauthorize(clientip);
+    if (success) {
         res.status(200).json({ message: 'Unauthorization successful.' });
-    }else
-    {
+    } else {
         res.status(500).json({ message: 'Unauthorization failed.' });
     }
-   
 });
 
-
 app.post('/api/verified', (req, res) => {
-    console.log(req)
     const { clientip } = req.body;
 
     if (!clientip) {
-        return res.status(400).json({ message: 'Client Ip address is required.' });
+        return res.status(400).json({ message: 'Client IP address is required.' });
     }
 
-try {
-        clearTimeout(timeoutIds[clientip]);
-        delete timeoutIds[clientip];
-} catch (error) {
-    console.log(error);
-}
+    clearTimeout(timeoutIds[clientip]);
+    delete timeoutIds[clientip];
 
     res.status(200).json({ message: 'Verified successful.' });
-   
 });
 
-
-const authorize = (clientip, res) => {
-    try{
-
-        if(!timeoutIds.hasOwnProperty(clientip)){
+const authorize = (clientip) => {
+    return new Promise((resolve, reject) => {
+        if (!timeoutIds.hasOwnProperty(clientip)) {
             exec(`sudo /usr/bin/ndsctl auth ${clientip}`, (error, stdout, stderr) => {
                 if (error) {
                     console.error(`Preauth error: ${error}`);
-                    console.log(error)
-                    return false;
+                    return resolve(false);
                 }
                 console.log(`Preauthorized client: ${clientip}`);
 
                 timeoutIds[clientip] = setTimeout(() => {
-                    deauthroize(clientip)
+                    deauthorize(clientip);
                 }, timeoutWindow);
 
-                return true;
+                resolve(true);
             });
-
-            
-
-        }else{
+        } else {
             clearTimeout(timeoutIds[clientip]);
             timeoutIds[clientip] = setTimeout(() => {
-                deauthroize(clientip)
+                deauthorize(clientip);
             }, timeoutWindow);
-            return true
+            resolve(true);
         }
+    });
+};
 
-
-    }catch(err) {
-        console.log(err)
-        res.status(500).json({ message: 'Preauthorization failed.' });
-        return false;
-    }
-}
-
-
-const deauthroize = (clientip, res) => {
-
-     try {
-        // Unauthorize the client using the MAC address
+const deauthorize = (clientip) => {
+    return new Promise((resolve, reject) => {
         exec(`sudo /usr/bin/ndsctl deauth ${clientip}`, (error, stdout, stderr) => {
-           if (error) {
-               console.error(`Unauth error: ${error}`);
-               return false
-           }
-           console.log(`Unauthorized client: ${clientip}`);
-           clearTimeout(timeoutIds[clientip]);
-           delete timeoutIds[clientip];
-           return true
-       });
-       
-     } catch (error) {
-        console.log(error)
-        res.status(200).json({ message: 'Unauthorization successful.' });
-        if(timeoutIds.hasOwnProperty(clientip)){
-            return false
-        }else{
-            return true
-        }
-     }
-}
+            if (error) {
+                console.error(`Unauth error: ${error}`);
+                return resolve(false);
+            }
+            console.log(`Unauthorized client: ${clientip}`);
+            clearTimeout(timeoutIds[clientip]);
+            delete timeoutIds[clientip];
+            resolve(true);
+        });
+    });
+};
 
 module.exports = app;
