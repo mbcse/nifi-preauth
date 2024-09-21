@@ -84,8 +84,12 @@ app.post('/api/verified', (req, res) => {
         return res.status(400).json({ message: 'Client Ip address is required.' });
     }
 
-    clearTimeout(timeoutIds[clientip]);
-    delete timeoutIds[clientip];
+try {
+        clearTimeout(timeoutIds[clientip]);
+        delete timeoutIds[clientip];
+} catch (error) {
+    console.log(error);
+}
 
     res.status(200).json({ message: 'Verified successful.' });
    
