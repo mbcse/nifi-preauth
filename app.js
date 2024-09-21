@@ -30,7 +30,7 @@ app.post('/api/preauth', (req, res) => {
     }
 
     // Preauthorize using the MAC address
-    exec(`/usr/bin/ndsctl auth ${clientip}`, (error, stdout, stderr) => {
+    exec(`sudo /usr/bin/ndsctl auth ${clientip}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Preauth error: ${error}`);
             console.log(error)
