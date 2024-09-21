@@ -95,7 +95,7 @@ app.post('/api/verified', (req, res) => {
 const authorize = (clientip, res) => {
     try{
 
-        if(!Object.hasOwn(timeoutIds, clientip)){
+        if(!timeoutIds.hasOwnProperty(clientip)){
             exec(`sudo /usr/bin/ndsctl auth ${clientip}`, (error, stdout, stderr) => {
                 if (error) {
                     console.error(`Preauth error: ${error}`);
@@ -148,7 +148,7 @@ const deauthroize = (clientip, res) => {
      } catch (error) {
         console.log(error)
         res.status(200).json({ message: 'Unauthorization successful.' });
-        if(Object.hasOwn(timeoutIds, clientip)){
+        if(timeoutIds.hasOwnProperty(clientip)){
             return false
         }else{
             return true
