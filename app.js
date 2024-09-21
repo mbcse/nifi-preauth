@@ -9,7 +9,7 @@ const app = express();
 
 app.use(logger('dev'));
 
-const timeoutWindow = 180000;
+const timeoutWindow = 300000;
 let timeoutIds = {};
 
 app.use(cors({
